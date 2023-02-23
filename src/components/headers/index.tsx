@@ -8,7 +8,7 @@ const ActiveWg = () => (
   <div className=" absolute w-[calc(100%+1rem)] h-[6px] left-[-8px] bottom-[-5px] bg-[#0f4fe1] opacity-40"></div>
 )
 
-const MenuBarWg = ({navActive}:{navActive:number}) => {
+const MenuBarWg = ({navActive}: { navActive: number }) => {
   return (
     <div
       className="fixed top-[52px] w-full bg-white ml-[-16px] z-10 px-2 py-1 flex flex-col gap-2 font-gordita font-[500] text-[15px] leading-[21px] text-center ">
@@ -24,11 +24,13 @@ const MenuBarWg = ({navActive}:{navActive:number}) => {
           {navActive == 1 && <ActiveWg/>}
         </div>
       </Link>
+      <Link href="/editor">
+        <div className="relative hover:cursor-pointer w-fit">
+          Editor
+          {navActive == 2 && <ActiveWg/>}
+        </div>
+      </Link>
 
-      <div className="relative hover:cursor-pointer w-fit">
-        Testnet
-        {navActive == 2 && <ActiveWg/>}
-      </div>
       <div className="relative hover:cursor-pointer w-fit">
         Blog
         {navActive == 3 && <ActiveWg/>}
@@ -42,7 +44,7 @@ const HeadersCpn = () => {
   const [navActive, setNavActive] = useState<number>(0)
   const [menuBar, setMenuBar] = useState<boolean>(false)
   useEffect(() => {
-    if(menuBar){
+    if (menuBar) {
       setMenuBar(false)
     }
     switch (path) {
@@ -53,7 +55,7 @@ const HeadersCpn = () => {
         console.log("here")
         setNavActive(1)
         break
-      case "/testnet":
+      case "/editor":
         setNavActive(2)
         break
       case "/blog":
@@ -69,23 +71,25 @@ const HeadersCpn = () => {
           <Image height={60} width={67} src="/images/logo.svg" alt="logo"/>
         </div>
         <div className="text-[15px] flex-1 flex flex-row justify-center gap-2 text-center font-gordita font-medium ">
-          <Link onClick={()=>setMenuBar(!menuBar)} href="/">
+          <Link onClick={() => setMenuBar(!menuBar)} href="/">
             <div
               className="hover:cursor-pointer relative">
               Home
               {navActive == 0 && <ActiveWg/>}
             </div>
           </Link>
-          <Link onClick={()=>setMenuBar(!menuBar)} href="/road-map">
+          <Link onClick={() => setMenuBar(!menuBar)} href="/road-map">
             <div className="hover:cursor-pointer relative">
               Roadmap
               {navActive == 1 && <ActiveWg/>}
             </div>
           </Link>
-          <div className="hover:cursor-pointer relative">
-            Testnet
-            {navActive === 2 && <ActiveWg/>}
-          </div>
+          <Link onClick={() => setMenuBar(!menuBar)} href="/editor">
+            <div className="hover:cursor-pointer relative">
+              Editor
+              {navActive === 2 && <ActiveWg/>}
+            </div>
+          </Link>
           <div className="hover:cursor-pointer relative">
             Blog
             {navActive === 3 && <ActiveWg/>}

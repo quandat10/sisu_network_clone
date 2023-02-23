@@ -14,6 +14,12 @@ yarn dev
 HomePage : /
 
 RoadMap : /road-map
+
+Editor : /editor
+
+## Editor
+Branch : editor
+
 ## Running
 Localhost : [http://localhost:3000](http://localhost:3000)
 
