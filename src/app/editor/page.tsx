@@ -124,7 +124,7 @@ const Editor = () => {
       const idx = rsSearch.indexOf(e!.currentTarget!.textContent!)
       setSelectIndex(idx)
     }}
-        onClick={() => onClick(index)} key={index}
+        onClick={(e) => onClick(e, index)} key={index}
         className={`${selectIndex === index ? "bg-gray-300 border rounded" : ""}  cursor-pointer p-[15px]`}>
       <span className="font-bold">{item}</span>
     </li>
@@ -165,8 +165,6 @@ const Editor = () => {
   }
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-
-
     setHideTooltip(false)
     const editable = document.getElementById("contenteditable");
     toggleTooltip(e, editable)
@@ -199,7 +197,7 @@ const Editor = () => {
           setSelectIndex(0)
         }
       } else {
-        setParam("")
+        setHideTooltip(true)
         onMouseUp(e)
       }
 
@@ -223,7 +221,6 @@ const Editor = () => {
           e.currentTarget.innerHTML = e.currentTarget.innerHTML.substring(0, n) + dictionary[dicIndex];
         }
 
-
         editable!.focus()
         document.execCommand('selectAll', false, "");
         document!.getSelection()!.collapseToEnd();
@@ -234,7 +231,6 @@ const Editor = () => {
       if (selectIndex === -1) {
         setHideTooltip(true)
       }
-
     }
 
     if (e.key === KeyStore.ESCAPE) {
@@ -242,35 +238,30 @@ const Editor = () => {
     }
 
     if (e.key === KeyStore.ARROW_LEFT || e.key === KeyStore.ARROW_RIGHT) {
-      setParam("")
+      setHideTooltip(true)
       onMouseUp(e)
     }
 
-    if(e.key === KeyStore.BACK_SPACE){
-      if(text.length === 0){
+    if (e.key === KeyStore.BACK_SPACE) {
+      if (text.length === 0) {
         e.preventDefault()
         e.stopPropagation()
       }
-      setParam("")
+      setHideTooltip(true)
       onMouseUp(e)
     }
   }
 
-  const onClick = (current: number) => {
+  const onClick = (e: React.MouseEvent<HTMLLIElement, MouseEvent>, current: number) => {
     const editable = document.getElementById("contenteditable");
 
-    let arr = text.split(" ")
     const dicStr = rsSearch[current]
     const dicIndex = dictionary.indexOf(dicStr)
-    if (arr.length == 1) {
-      setText(dictionary[dicIndex])
-      editable!.innerHTML = dictionary[dicIndex]
-    } else {
-      arr = arr.slice(0, arr.length - 1)
-      const rs = arr.join(" ") + " " + dictionary[dicIndex] + " "
-      setText(rs)
-      editable!.innerHTML = rs
+    const n = editable!.innerHTML.lastIndexOf(param)
+    if (n >= 0) {
+      editable!.innerHTML = editable!.innerHTML.substring(0, n) + dictionary[dicIndex];
     }
+    editable!.innerHTML
     editable!.focus()
     document.execCommand('selectAll', false, "");
     document!.getSelection()!.collapseToEnd();
@@ -288,7 +279,6 @@ const Editor = () => {
       <div className="w-1 h-1" style={{backgroundColor: e}}></div>
     </button>
   ))
-
 
   const onMouseUp = (e: React.MouseEvent<HTMLDivElement, MouseEvent> | React.KeyboardEvent<HTMLDivElement>) => {
     const editable = document.getElementById("contenteditable");
@@ -320,9 +310,9 @@ const Editor = () => {
       }
     }} className="min-h-screen flex-row justify-center justify-center mxs:px-[10px] mxs:py-[50px] xs:px-[100px]">
       <form>
-        <div className="w-full mb-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
-          <div className="flex items-center justify-between px-[3px] py-[2px] border-b dark:border-gray-600">
-            <div className="flex flex-wrap items-center divide-gray-200 sm:divide-x dark:divide-gray-600">
+        <div className="w-full mb-4 border border-gray-200 rounded-lg bg-gray-50">
+          <div className="flex items-center justify-between px-[3px] py-[2px] border-b">
+            <div className="flex flex-wrap items-center divide-gray-200 sm:divide-x">
               <div className="p-0.5 flex items-center space-x-1 sm:pr-4">
                 <button type="button" onClick={() => focusInput("bold")}
                         className={`px-0.5 py-[2px] ${boldActive ? "bg-gray-300" : ""}  text-black rounded cursor-pointer hover:text-gray-900 hover:bg-gray-200`}>
@@ -351,7 +341,6 @@ const Editor = () => {
                 </div>
               </div>
             </div>
-
           </div>
           <div onClick={() => {
             document!.getElementById("contenteditable")!.focus()
@@ -364,14 +353,14 @@ const Editor = () => {
               onKeyUp={onKeyUp}
               onMouseUp={onMouseUp}
               onInput={(val) => {
-                if(val.currentTarget.textContent!.length >= 0){
+                if (val.currentTarget.textContent!.length >= 0) {
                   setText(val.currentTarget.textContent ?? "")
                 }
               }}
               className="inline-block relative focus:outline-0 block w-full px-0 text-sm text-gray-800 bg-white border-0 focus:ring-0"
               contentEditable={true}/>
             <div id="tooltip"
-                 className={`${(param&& param.length < 3 || rsSearch.length <= 0 || hideTooltip) ? "invisible" : ""} absolute z-30`}>
+                 className={`${(param && param.length < 3 || rsSearch.length <= 0 || hideTooltip) ? "invisible" : ""} absolute z-30`}>
               <div
                 className="w-[200px] absolute bg-white overflow-auto rounded-lg shadow-md z-10 p-1 border border-gray-300 text-gray-800 text-xs absolute bottom-full">
                 <ul>
