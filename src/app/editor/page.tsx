@@ -23,8 +23,21 @@ const colors = [
   "#B8860B",
 ]
 
+enum KeyStore {
+  ENTER = "Enter",
+  SPACE = " ",
+  ARROW_LEFT = "ArrowLeft",
+  ARROW_RIGHT = "ArrowRight",
+  ARROW_UP = "ArrowUp",
+  ARROW_DOWN = "ArrowDown",
+  BACK_SPACE = "Backspace",
+  ESCAPE = "Escape",
+  BOLD = "B",
+  STRIKE = "STRIKE"
+}
 
-function getCaretCoordinates() {
+
+const getCaretCoordinates = () => {
   let x = 0, y = 0
   const isSupported = typeof window.getSelection !== "undefined"
   if (isSupported) {
@@ -42,7 +55,6 @@ function getCaretCoordinates() {
   return {x, y}
 }
 
-
 const Editor = () => {
   const [text, setText] = useState<string>("")
   const [param, setParam] = useState<string>("")
@@ -50,7 +62,8 @@ const Editor = () => {
   const [selectIndex, setSelectIndex] = useState<number>(-1)
   const [hideTooltip, setHideTooltip] = useState<boolean>(false)
   const [showColor, setShowColor] = useState<boolean>(false)
-  const [activeColor, setActiveColor] = useState<string>("#000000")
+  const [boldActive, setBoldActive] = useState<boolean>(false)
+  const [strikeActive, setStrikeActive] = useState<boolean>(false)
 
   const toggleTooltip = (event: React.KeyboardEvent<HTMLDivElement>, contentEditable: HTMLElement | null) => {
     const tooltip = document.getElementById("tooltip");
@@ -60,7 +73,7 @@ const Editor = () => {
       tooltip!.setAttribute("aria-hidden", "false");
       tooltip!.setAttribute(
         "style",
-        `display: inline-block; left: ${x - 50}px; top: ${y-100}px`
+        `display: inline-block; left: ${x - 50}px; top: ${y - 100}px`
       );
     } else {
       tooltip!.setAttribute("aria-hidden", "true");
@@ -68,12 +81,76 @@ const Editor = () => {
     }
   }
 
-  useEffect(() => {
-    let arr = text.split(" ")
-    const query = arr[arr.length - 1].trim()
+  // useEffect(() => {
+  //   console.log("text",text)
+  //   let arr = text.split(" ")
+  //   const query = arr[arr.length - 1].trim()
+  //   console.log("query",query)
+  //   console.log("arr",arr)
+  //   setParam(query)
+  //
+  //   if (query.length >= 3) {
+  //     const rs = dictionary.filter((dictionary) =>
+  //       dictionary
+  //         .toLowerCase()
+  //         .replace(/\s+/g, "")
+  //         .includes(query.toLowerCase().replace(/\s+/g, ""))
+  //     )
+  //
+  //     setRsSearch(rs)
+  //   } else {
+  //     setRsSearch([])
+  //   }
+  //
+  // }, [text])
+
+  const focusInput = (text: string, value?: string) => {
+    const editable = document.getElementById("contenteditable");
+    document.execCommand(text, false, value ?? '')
+    editable!.focus()
+    if (text === "bold") {
+      setBoldActive(!boldActive)
+    }
+
+    if (text === "strikeThrough") {
+      setStrikeActive(!strikeActive)
+    }
+
+
+  };
+
+  const ItemRs = rsSearch.map((item, index) => (
+    <li onMouseOver={(e) => {
+      const idx = rsSearch.indexOf(e!.currentTarget!.textContent!)
+      setSelectIndex(idx)
+    }}
+        onClick={() => onClick(index)} key={index}
+        className={`${selectIndex === index ? "bg-gray-300 border rounded" : ""}  cursor-pointer p-[15px]`}>
+      <span className="font-bold">{item}</span>
+    </li>
+  ))
+
+  const onKeyUp = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    setBoldActive(document.queryCommandState("bold"))
+    setStrikeActive(document.queryCommandState("strikeThrough"))
+    let arr = e.currentTarget.innerHTML
+      .split("</b>")
+      .join("")
+      .split("</strike>")
+      .join("")
+      .split("<b>")
+      .join("")
+      .split("<strike>")
+      .join("")
+      .split(/\s/)
+      .join("<br>")
+      .split("<br>")
+      .filter(Boolean)
+
+    let query = arr[arr.length - 1]
     setParam(query)
 
-    if (query.length >= 3) {
+    if (query && query.length >= 3) {
       const rs = dictionary.filter((dictionary) =>
         dictionary
           .toLowerCase()
@@ -85,74 +162,68 @@ const Editor = () => {
     } else {
       setRsSearch([])
     }
-
-  }, [text])
-
-  const focusInput = (text: string, value?: string) => {
-    document.execCommand(text, false, value ?? '')
-  };
-
-  const ItemRs = rsSearch.map((item, index) => (
-    <li onMouseOver={(e) => {
-      const idx = rsSearch.indexOf(e!.currentTarget!.textContent!)
-      setSelectIndex(idx)
-    }}
-        onClick={() => onClick(index)} key={index}
-        className={`${selectIndex === index ? "bg-green-400" : ""}  cursor-pointer p-[5px]`}>
-      <span className="font-bold">{item}</span>
-    </li>
-  ))
+  }
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+
+
     setHideTooltip(false)
     const editable = document.getElementById("contenteditable");
     toggleTooltip(e, editable)
-
     let current = selectIndex
     setSelectIndex(current)
 
-    if (e.key === "ArrowUp") {
-      e.preventDefault()
-      e.stopPropagation()
-      current -= 1;
-      setSelectIndex(current)
-      if (current < 0) {
-        setSelectIndex(rsSearch.length - 1)
+    if (e.key === KeyStore.ARROW_UP) {
+      if (!(param.length < 3 || rsSearch.length <= 0 || hideTooltip)) {
+        e.preventDefault()
+        e.stopPropagation()
+        current -= 1;
+        setSelectIndex(current)
+        if (current < 0) {
+          setSelectIndex(rsSearch.length - 1)
+        }
+      } else {
+        setParam("")
+        onMouseUp(e)
       }
     }
 
-    if (e.key === "ArrowDown") {
-      e.preventDefault()
-      e.stopPropagation()
-      current += 1;
+    if (e.key === KeyStore.ARROW_DOWN) {
+      if (!(param.length < 3 || rsSearch.length <= 0 || hideTooltip)) {
+        e.preventDefault()
+        e.stopPropagation()
+        current += 1;
 
-      setSelectIndex(current)
-      if (current >= rsSearch.length) {
-        setSelectIndex(0)
+        setSelectIndex(current)
+        if (current >= rsSearch.length) {
+          setSelectIndex(0)
+        }
+      } else {
+        setParam("")
+        onMouseUp(e)
       }
+
     }
 
-    if (e.key === " ") {
+    if (e.key === KeyStore.SPACE) {
       setHideTooltip(true)
       setSelectIndex(-1)
     }
 
-    if (e.key === "Enter") {
+    if (e.key === KeyStore.ENTER) {
+
       if (rsSearch.length > 0 && selectIndex !== -1) {
         e.preventDefault()
         e.stopPropagation()
-        let arr = text.split(" ")
         const dicStr = rsSearch[current]
         const dicIndex = dictionary.indexOf(dicStr)
-        if (arr.length == 1) {
-          setText(dictionary[dicIndex])
-          editable!.innerHTML = dictionary[dicIndex]
-        } else {
-          arr = arr.slice(0, arr.length - 1)
-          const rs = arr.join(" ") + " " + dictionary[dicIndex] + " "
-          setText(rs)
-          editable!.innerHTML = rs
+        const n = e.currentTarget.innerHTML.lastIndexOf(param)
+
+        if (n >= 0) {
+          e.currentTarget.innerHTML = e.currentTarget.innerHTML.substring(0, n) + dictionary[dicIndex];
         }
+
+
         editable!.focus()
         document.execCommand('selectAll', false, "");
         document!.getSelection()!.collapseToEnd();
@@ -166,10 +237,23 @@ const Editor = () => {
 
     }
 
-    if (e.key == "Escape") {
+    if (e.key === KeyStore.ESCAPE) {
       setHideTooltip(true)
     }
 
+    if (e.key === KeyStore.ARROW_LEFT || e.key === KeyStore.ARROW_RIGHT) {
+      setParam("")
+      onMouseUp(e)
+    }
+
+    if(e.key === KeyStore.BACK_SPACE){
+      if(text.length === 0){
+        e.preventDefault()
+        e.stopPropagation()
+      }
+      setParam("")
+      onMouseUp(e)
+    }
   }
 
   const onClick = (current: number) => {
@@ -198,46 +282,69 @@ const Editor = () => {
     <button key={i} onClick={() => {
       focusInput("foreColor", e)
       setShowColor(!showColor)
-      setActiveColor(e)
     }} type="button"
             data-tooltip-target="tooltip-fullscreen"
-            className="w-2 h-2 text-gray-500 rounded cursor-pointer sm:ml-auto hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600">
+            className="flex justify-center items-center w-2 h-2  text-gray-500 rounded cursor-pointer sm:ml-auto hover:text-gray-900 hover:bg-gray-100 ">
       <div className="w-1 h-1" style={{backgroundColor: e}}></div>
-      <span className="sr-only">Change color</span>
     </button>
   ))
 
+
+  const onMouseUp = (e: React.MouseEvent<HTMLDivElement, MouseEvent> | React.KeyboardEvent<HTMLDivElement>) => {
+    const editable = document.getElementById("contenteditable");
+    let rs = Cursor.getCurrentCursorPosition(editable!)
+
+    let existB = false
+    let existStrike = false
+
+    if (rs.includes(KeyStore.STRIKE)) {
+      existStrike = true
+    }
+
+    if (rs.includes(KeyStore.BOLD)) {
+      existB = true
+    }
+
+
+    setBoldActive(existB)
+    setStrikeActive(existStrike)
+  }
+
   return (
-    <div onClick={() => {
+    <div onClick={(e) => {
       setHideTooltip(true)
-    }} className="min-h-screen flex-row justify-center justify-center px-[100px]">
+      e.stopPropagation()
+      e.preventDefault()
+      if (showColor) {
+        setShowColor(!showColor)
+      }
+    }} className="min-h-screen flex-row justify-center justify-center mxs:px-[10px] mxs:py-[50px] xs:px-[100px]">
       <form>
         <div className="w-full mb-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
           <div className="flex items-center justify-between px-[3px] py-[2px] border-b dark:border-gray-600">
             <div className="flex flex-wrap items-center divide-gray-200 sm:divide-x dark:divide-gray-600">
-              <div className="flex items-center space-x-1 sm:pr-4">
+              <div className="p-0.5 flex items-center space-x-1 sm:pr-4">
                 <button type="button" onClick={() => focusInput("bold")}
-                        className={`p-2  text-black rounded cursor-pointer hover:text-gray-900 hover:bg-gray-100`}>
+                        className={`px-0.5 py-[2px] ${boldActive ? "bg-gray-300" : ""}  text-black rounded cursor-pointer hover:text-gray-900 hover:bg-gray-200`}>
                   <b>B</b>
                 </button>
                 <button type="button"
                         onClick={() => focusInput("strikeThrough")}
-                        className={`p-2  text-black rounded cursor-pointer hover:text-gray-900 hover:bg-gray-100`}>
-                  <s>Strike</s>
+                        className={`px-0.5 py-[2px] ${strikeActive ? "bg-gray-300" : ""} text-black rounded cursor-pointer hover:text-gray-900 hover:bg-gray-200`}>
+                  <s>s</s>
                 </button>
                 <button onClick={() => {
                   setShowColor(!showColor)
                 }} type="button"
                         data-tooltip-target="tooltip-fullscreen"
-                        className="p-2 text-gray-500 rounded cursor-pointer sm:ml-auto hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600">
-                  <div className="w-1 h-1" style={{backgroundColor: activeColor}}></div>
-                  <span className="sr-only">Change color</span>
+                        className={`p-0.5 text-gray-500 rounded cursor-pointer sm:ml-auto hover:text-gray-900 hover:bg-gray-200`}>
+                  <div className="w-1 h-1" style={{backgroundColor: "#000000"}}></div>
                 </button>
                 <div
-                  className={`${showColor ? "" : "invisible"} absolute z-30 left-[350px] top-[350px]`}>
+                  className={`${showColor ? "" : "invisible"} absolute z-30 left-[200px] top-[320px]`}>
                   <div
                     className="w-[180px] h-[180px] absolute bg-white overflow-auto rounded-lg shadow-md z-10 p-1 border border-gray-300 text-gray-800 text-xs absolute bottom-full">
-                    <div className="flex flex-wrap">
+                    <div className="flex flex-wrap justify-center items-center">
                       {ItemColor}
                     </div>
                   </div>
@@ -248,16 +355,23 @@ const Editor = () => {
           </div>
           <div onClick={() => {
             document!.getElementById("contenteditable")!.focus()
-          }} className="cursor-text min-h-[500px] relative px-4 py-2 bg-white rounded-b-lg dark:bg-gray-800">
+          }} className=" cursor-text min-h-[500px] relative px-4 py-2 bg-white rounded-b-lg">
             <div
+              onClick={e => e.preventDefault()}
               id="contenteditable"
               tabIndex={0}
               onKeyDown={onKeyDown}
-              onInput={(val) => setText(val.currentTarget.textContent ?? "")}
-              className="inline-block relative focus:outline-0 block w-full px-0 text-sm text-gray-800 bg-white border-0 dark:bg-gray-800 focus:ring-0 dark:text-white dark:placeholder-gray-400"
+              onKeyUp={onKeyUp}
+              onMouseUp={onMouseUp}
+              onInput={(val) => {
+                if(val.currentTarget.textContent!.length >= 0){
+                  setText(val.currentTarget.textContent ?? "")
+                }
+              }}
+              className="inline-block relative focus:outline-0 block w-full px-0 text-sm text-gray-800 bg-white border-0 focus:ring-0"
               contentEditable={true}/>
             <div id="tooltip"
-                 className={`${(param.length < 3 || rsSearch.length <= 0 || hideTooltip) ? "invisible" : ""} absolute z-30`}>
+                 className={`${(param&& param.length < 3 || rsSearch.length <= 0 || hideTooltip) ? "invisible" : ""} absolute z-30`}>
               <div
                 className="w-[200px] absolute bg-white overflow-auto rounded-lg shadow-md z-10 p-1 border border-gray-300 text-gray-800 text-xs absolute bottom-full">
                 <ul>
@@ -269,8 +383,67 @@ const Editor = () => {
         </div>
       </form>
 
+      <div className="flex flex-col p-1 border border-gray-200 rounded-lg bg-gray-50">
+        <p className="font-bold">Dictionary</p>
+        <br/>
+        <div className="w-full grid mxsm:grid-cols-3 fmd:grid-cols-4 grid-cols-5 justify-center items-center">
+          {dictionary.map((e, i) => (
+            <span className={"py-0.5"} key={i}>{e}</span>
+          ))}
+        </div>
+      </div>
+
     </div>
   )
+}
+
+class Cursor {
+  static getCurrentCursorPosition(parentElement: Node) {
+    let selection = window.getSelection(),
+      charCount = -1,
+      node, rs = []
+
+    if (selection!.focusNode) {
+      if (Cursor._isChildOf(selection!.focusNode, parentElement)) {
+        node = selection!.focusNode;
+        charCount = selection!.focusOffset;
+
+        while (node) {
+          if (node === parentElement) {
+            break;
+          }
+
+          if (node.previousSibling) {
+            node = node.previousSibling;
+            charCount += node.textContent!.length;
+          } else {
+            node = node.parentNode;
+
+            if (node === null) {
+              break;
+            }
+
+            if (node.nodeName === KeyStore.STRIKE || node.nodeName === KeyStore.BOLD || node.nodeName === "FONT") {
+              rs.push(node.nodeName)
+            }
+          }
+        }
+      }
+    }
+
+    return rs
+  }
+
+  static _isChildOf(node: Node | null, parentElement: any) {
+    while (node !== null) {
+      if (node === parentElement) {
+        return true;
+      }
+      node = node.parentNode;
+    }
+
+    return false;
+  }
 }
 
 export default Editor

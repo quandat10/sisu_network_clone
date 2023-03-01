@@ -80,6 +80,7 @@
     --toastify-color-progress-warning: var(--toastify-color-warning);
     --toastify-color-progress-error: var(--toastify-color-error);
     -webkit-tap-highlight-color:transparent;
+    -webkit-focus-ring-color: none
 }
 
 
