@@ -1,6 +1,6 @@
 "use client"
 
-import React, {useEffect, useState} from "react";
+import React, {useState} from "react";
 
 import dictionary from "dictionary.json"
 
@@ -35,7 +35,6 @@ enum KeyStore {
   BOLD = "B",
   STRIKE = "STRIKE"
 }
-
 
 const getCaretCoordinates = () => {
   let x = 0, y = 0
@@ -81,31 +80,9 @@ const Editor = () => {
     }
   }
 
-  // useEffect(() => {
-  //   console.log("text",text)
-  //   let arr = text.split(" ")
-  //   const query = arr[arr.length - 1].trim()
-  //   console.log("query",query)
-  //   console.log("arr",arr)
-  //   setParam(query)
-  //
-  //   if (query.length >= 3) {
-  //     const rs = dictionary.filter((dictionary) =>
-  //       dictionary
-  //         .toLowerCase()
-  //         .replace(/\s+/g, "")
-  //         .includes(query.toLowerCase().replace(/\s+/g, ""))
-  //     )
-  //
-  //     setRsSearch(rs)
-  //   } else {
-  //     setRsSearch([])
-  //   }
-  //
-  // }, [text])
-
   const focusInput = (text: string, value?: string) => {
     const editable = document.getElementById("contenteditable");
+
     document.execCommand(text, false, value ?? '')
     editable!.focus()
     if (text === "bold") {
@@ -115,20 +92,32 @@ const Editor = () => {
     if (text === "strikeThrough") {
       setStrikeActive(!strikeActive)
     }
-
-
   };
 
-  const ItemRs = rsSearch.map((item, index) => (
-    <li onMouseOver={(e) => {
-      const idx = rsSearch.indexOf(e!.currentTarget!.textContent!)
-      setSelectIndex(idx)
-    }}
-        onClick={(e) => onClick(e, index)} key={index}
-        className={`${selectIndex === index ? "bg-gray-300 border rounded" : ""}  cursor-pointer p-[15px]`}>
-      <span className="font-bold">{item}</span>
-    </li>
-  ))
+  // ================Handle Key Action================
+  const onMouseOver = (e: React.MouseEvent<HTMLLIElement, MouseEvent>) => {
+    const idx = rsSearch.indexOf(e!.currentTarget!.textContent!)
+    setSelectIndex(idx)
+  }
+
+  const onMouseUp = (e: React.MouseEvent<HTMLDivElement, MouseEvent> | React.KeyboardEvent<HTMLDivElement>) => {
+    const editable = document.getElementById("contenteditable");
+    let rs = Cursor.getCurrentCursorPosition(editable!)
+
+    let existB = false
+    let existStrike = false
+
+    if (rs.includes(KeyStore.STRIKE)) {
+      existStrike = true
+    }
+
+    if (rs.includes(KeyStore.BOLD)) {
+      existB = true
+    }
+
+    setBoldActive(existB)
+    setStrikeActive(existStrike)
+  }
 
   const onKeyUp = (e: React.KeyboardEvent<HTMLDivElement>) => {
     setBoldActive(document.queryCommandState("bold"))
@@ -209,7 +198,6 @@ const Editor = () => {
     }
 
     if (e.key === KeyStore.ENTER) {
-
       if (rsSearch.length > 0 && selectIndex !== -1) {
         e.preventDefault()
         e.stopPropagation()
@@ -252,7 +240,7 @@ const Editor = () => {
     }
   }
 
-  const onClick = (e: React.MouseEvent<HTMLLIElement, MouseEvent>, current: number) => {
+  const onClickItem = (e: React.MouseEvent<HTMLLIElement, MouseEvent>, current: number) => {
     const editable = document.getElementById("contenteditable");
 
     const dicStr = rsSearch[current]
@@ -269,6 +257,15 @@ const Editor = () => {
     setSelectIndex(-1)
   }
 
+  // ================Handle Item================
+  const ItemRs = rsSearch.map((item, index) => (
+    <li onMouseOver={onMouseOver}
+        onClick={(e) => onClickItem(e, index)} key={index}
+        className={`${selectIndex === index ? "bg-gray-300 border rounded" : ""}  cursor-pointer p-[15px]`}>
+      <span className="font-bold">{item}</span>
+    </li>
+  ))
+
   const ItemColor = colors.map((e, i) => (
     <button key={i} onClick={() => {
       focusInput("foreColor", e)
@@ -280,26 +277,7 @@ const Editor = () => {
     </button>
   ))
 
-  const onMouseUp = (e: React.MouseEvent<HTMLDivElement, MouseEvent> | React.KeyboardEvent<HTMLDivElement>) => {
-    const editable = document.getElementById("contenteditable");
-    let rs = Cursor.getCurrentCursorPosition(editable!)
-
-    let existB = false
-    let existStrike = false
-
-    if (rs.includes(KeyStore.STRIKE)) {
-      existStrike = true
-    }
-
-    if (rs.includes(KeyStore.BOLD)) {
-      existB = true
-    }
-
-
-    setBoldActive(existB)
-    setStrikeActive(existStrike)
-  }
-
+  // ================Render UI================
   return (
     <div onClick={(e) => {
       setHideTooltip(true)
@@ -371,7 +349,6 @@ const Editor = () => {
           </div>
         </div>
       </form>
-
       <div className="flex flex-col p-1 border border-gray-200 rounded-lg bg-gray-50">
         <p className="font-bold">Dictionary</p>
         <br/>
@@ -381,7 +358,6 @@ const Editor = () => {
           ))}
         </div>
       </div>
-
     </div>
   )
 }
@@ -419,7 +395,6 @@ class Cursor {
         }
       }
     }
-
     return rs
   }
 
@@ -430,7 +405,6 @@ class Cursor {
       }
       node = node.parentNode;
     }
-
     return false;
   }
 }
